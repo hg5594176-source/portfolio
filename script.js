@@ -209,6 +209,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 2000);
 
     contactForm.addEventListener('submit', function (e) {
+      // If browsing locally as a file (file://), allow native POST directly
+      if (window.location.protocol === 'file:') {
+        return;
+      }
+
       e.preventDefault();
 
       const originalBtnText = sendBtn.innerHTML;
@@ -217,15 +222,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const formData = new FormData(contactForm);
 
-      fetch(contactForm.action, {
+      fetch('https://formsubmit.co/ajax/hg5594176@gmail.com', {
         method: 'POST',
         body: formData,
         headers: {
           'Accept': 'application/json'
         }
       })
-      .then(response => {
-        if (response.ok) {
+      .then(response => response.json())
+      .then(data => {
+        if (data.success === 'true' || data.success === true) {
           sendBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
           sendBtn.style.color = '#ffffff';
           sendBtn.innerHTML = `✓ Message Sent Successfully!`;
@@ -237,11 +243,12 @@ document.addEventListener('DOMContentLoaded', () => {
             sendBtn.innerHTML = originalBtnText;
           }, 5000);
         } else {
-          throw new Error('Form submission failed');
+          // If first-time activation needed or unhandled state, fallback to direct submission
+          contactForm.submit();
         }
       })
-      .catch(error => {
-        // Fallback standard submit if AJAX blocked
+      .catch(() => {
+        // Fallback standard submit if fetch is blocked
         contactForm.submit();
       });
     });
